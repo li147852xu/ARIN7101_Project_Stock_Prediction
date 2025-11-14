@@ -42,7 +42,9 @@ Project/
 
 ## 快速开始
 
-### 1. 安装依赖
+### 本地运行
+
+#### 1. 安装依赖
 
 ```bash
 pip install -r requirements.txt
@@ -53,7 +55,40 @@ pip install -r requirements.txt
 pip install mamba-ssm --no-build-isolation
 ```
 
-### 2. 运行完整流程
+### 云平台RTX 5090部署 🚀
+
+**适用于AutoDL、恒源云等GPU云平台**
+
+#### 快速部署（一键式）
+
+```bash
+# 下载并运行部署脚本
+wget https://raw.githubusercontent.com/li147852xu/ARIN7101_Project_Stock_Prediction/main/deploy_cloud.sh
+chmod +x deploy_cloud.sh
+./deploy_cloud.sh
+```
+
+#### 运行完整Demo
+
+```bash
+# 进入项目目录
+cd ARIN7101_Project_Stock_Prediction
+source venv/bin/activate
+
+# 运行交互式Demo
+./demo_complete.sh
+```
+
+**Demo选项**：
+- 快速测试 (5分钟) - 验证环境
+- 标准Demo (20分钟) - 常规展示
+- 完整Demo (60-90分钟) - 所有模型
+
+**详细部署文档**：请查看 [CLOUD_GPU_DEPLOYMENT.md](CLOUD_GPU_DEPLOYMENT.md)
+
+---
+
+#### 2. 运行完整流程
 
 ```bash
 python main.py
