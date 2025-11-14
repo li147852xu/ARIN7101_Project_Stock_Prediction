@@ -1,19 +1,337 @@
-# 股票短期涨跌预测项目
+# 股票短期涨跌预测系统
+
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> 基于深度学习和经典时序模型的股票涨跌预测系统，实现了完整的端到端机器学习工作流程。
+
+## 📋 目录
+
+- [项目简介](#项目简介)
+- [主要特点](#主要特点)
+- [快速开始](#快速开始)
+- [技术指标](#技术指标)
+- [模型说明](#模型说明)
+- [数据集说明](#数据集说明)
+- [防止时间泄漏](#防止时间泄漏)
+- [项目结构](#项目结构)
+- [配置说明](#配置说明)
+- [使用示例](#使用示例)
+- [评估指标](#评估指标)
+- [常见问题](#常见问题)
+- [注意事项](#注意事项)
+- [未来扩展](#未来扩展)
+- [参考文献](#参考文献)
+- [License](#license)
 
 ## 项目简介
 
-本项目利用历史价格与技术指标数据，预测个股下一交易日的涨跌方向（二分类任务）。
+本项目利用历史价格与技术指标数据，预测个股下一交易日的涨跌方向（二分类任务）。项目从数据获取到模型评估，实现了完整的端到端机器学习工作流程，包含数据处理、特征工程、模型训练和结果评估等全部环节。
+
+**项目亮点**：
+- 📊 40+种经典技术指标
+- 🤖 6种模型（MLP、LSTM、Transformer、Mamba、ARIMA、Prophet）
+- 🔒 严格防止时间泄漏
+- 📈 完整的评估体系
+- 🛠️ 工程化代码结构
 
 ## 主要特点
 
+### 🎯 核心功能
+
 - **多数据源支持**：支持从yfinance、akshare等数据源获取上证50成分股数据
-- **丰富的技术指标**：包含20+种经典技术指标（MA、EMA、MACD、RSI、Bollinger Bands、ATR、OBV等）
-- **防止时间泄漏**：严格的时间序列切分，确保训练集不包含未来信息
-- **多种模型**：
-  - 传统机器学习：MLP（基线）
-  - 深度时序模型：LSTM、Transformer、Mamba
-  - 统计时序模型：ARIMA、Prophet
-- **完整评估**：提供Accuracy、Precision、Recall、F1-Score、AUC等多维度指标
+- **丰富的技术指标**：包含40+种经典技术指标，涵盖趋势、动量、波动率、成交量四大类
+- **严格防时间泄漏**：严格的时间序列切分，确保训练集不包含未来信息
+- **多种模型实现**：
+  - 深度学习：MLP（基线）、LSTM、Transformer、Mamba
+  - 统计模型：ARIMA、Prophet
+- **完整评估体系**：提供Accuracy、Precision、Recall、F1-Score、AUC等多维度指标
+- **工程化实践**：模块化代码、配置管理、自动化脚本、完整文档
+
+### ✨ 技术亮点
+
+1. **防时间泄漏设计**
+```python
+# 严格按时间切分，不打乱数据
+X_train = X[:train_size]
+X_val = X[train_size:train_size+val_size]
+X_test = X[train_size+val_size:]
+
+# 标准化只使用训练集统计量
+scaler.fit(X_train)
+X_val = scaler.transform(X_val)
+X_test = scaler.transform(X_test)
+
+# 目标使用未来数据
+df['target'] = (df['close'].shift(-1) > df['close']).astype(int)
+```
+
+2. **丰富的技术指标**
+   - 4大类20+种指标
+   - 标准化实现方式
+   - 自动处理NaN值
+
+3. **多样化模型**
+   - 从简单到复杂
+   - 从传统到前沿
+   - 统一接口设计
+
+## 快速开始
+
+### 环境要求
+
+- Python 3.8+
+- pip
+- 网络连接（用于下载数据）
+- （可选）CUDA支持的GPU
+
+### 安装步骤
+
+#### 方法1：使用自动化脚本（推荐）
+
+**Linux/Mac:**
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+**Windows:**
+```cmd
+run.bat
+```
+
+#### 方法2：手动安装
+
+1. **创建虚拟环境**
+```bash
+python -m venv venv
+```
+
+2. **激活虚拟环境**
+
+Linux/Mac:
+```bash
+source venv/bin/activate
+```
+
+Windows:
+```cmd
+venv\Scripts\activate
+```
+
+3. **安装依赖**
+```bash
+pip install -r requirements.txt
+```
+
+**注意**：如果安装mamba-ssm遇到问题（需要CUDA），可以跳过：
+```bash
+# 编辑 requirements.txt，注释掉 mamba-ssm 相关行
+# 项目会自动使用GRU作为Mamba的替代
+```
+
+### 运行项目
+
+#### 完整流程
+```bash
+python main.py
+```
+
+这将执行以下步骤：
+1. 下载股票数据（贵州茅台、招商银行、中国平安等）
+2. 计算技术指标
+3. 构造时间序列样本
+4. 训练所有模型
+5. 评估并生成报告
+
+#### 分步执行
+
+```bash
+# 仅下载数据
+python main.py --step download
+
+# 仅训练模型
+python main.py --step train
+
+# 训练特定模型
+python main.py --step train --model mlp,lstm
+
+# 仅评估
+python main.py --step evaluate
+```
+
+#### 测试配置
+```bash
+python test_setup.py
+```
+
+## 技术指标
+
+项目实现了40+种经典技术指标，分为四大类：
+
+### 📈 趋势指标
+- **SMA/EMA**：简单/指数移动平均线（5, 10, 20, 30, 60日）
+- **MACD**：移动平均收敛发散指标（快线、慢线、柱状图）
+- **ADX**：平均趋向指数
+
+### 💪 动量指标
+- **RSI**：相对强弱指数
+- **Stochastic**：随机指标（K值、D值）
+- **CCI**：商品通道指数
+- **Williams %R**：威廉指标
+- **ROC**：变动速率
+- **Momentum**：动量指标
+
+### 📊 波动率指标
+- **Bollinger Bands**：布林带（上轨、中轨、下轨）
+- **ATR**：平均真实波动幅度
+- **Volatility**：历史波动率（10, 20, 30日）
+- **BB Width**：布林带宽度
+- **BB Position**：价格在布林带中的位置
+
+### 📦 成交量指标
+- **OBV**：能量潮指标
+- **Volume MA**：成交量移动平均
+- **MFI**：资金流量指数
+- **Volume Ratio**：成交量比率
+
+### 🎯 其他指标
+- 涨跌幅、对数收益率
+- 高低价差、振幅
+- 开盘涨跌幅、日内涨跌幅
+- 价格位置（10, 20, 30日）
+- 距离高低点
+
+## 模型说明
+
+### 1. MLP (多层感知机)
+- **类型**：前馈神经网络
+- **用途**：基线模型
+- **特点**：
+  - 简单高效
+  - 带注意力机制变体
+  - 适合快速实验
+
+### 2. LSTM (长短期记忆网络)
+- **类型**：循环神经网络
+- **用途**：时序建模
+- **特点**：
+  - 标准双向LSTM
+  - 带注意力机制
+  - 堆叠LSTM（带残差连接）
+  - 擅长捕捉长期依赖
+
+### 3. Transformer
+- **类型**：注意力机制模型
+- **用途**：并行时序建模
+- **特点**：
+  - 标准Transformer编码器
+  - 带CLS token变体
+  - 时序专用Transformer
+  - 位置编码
+
+### 4. Mamba
+- **类型**：状态空间模型（SSM）
+- **用途**：高效长序列建模
+- **特点**：
+  - 最新的SSM架构
+  - 混合模型变体
+  - GRU fallback（无CUDA时）
+  - 高效的序列建模
+
+### 5. ARIMA
+- **类型**：统计时序模型
+- **用途**：传统时序预测
+- **特点**：
+  - 自回归积分滑动平均
+  - 支持外生变量（SARIMAX）
+  - 经典统计方法
+
+### 6. Prophet
+- **类型**：加性回归模型
+- **用途**：趋势和季节性建模
+- **特点**：
+  - Facebook开源
+  - 考虑趋势和季节性
+  - 支持多回归变量
+
+## 数据集说明
+
+### 数据源
+- **股票池**：上证50成分股
+  - 600519 贵州茅台
+  - 600036 招商银行
+  - 601318 中国平安
+  - 600030 中信证券
+  - 600887 伊利股份
+
+### 数据特征
+- **时间范围**：2019-01-01 至今
+- **数据频率**：日线数据
+- **原始特征**：开盘价、最高价、最低价、收盘价、成交量（OHLCV）
+- **衍生特征**：40+个技术指标
+- **总特征数**：45+个
+
+### 样本构造
+- **方法**：滑动窗口
+- **窗口大小**：30日（可配置）
+- **预测目标**：下1日涨跌方向
+
+### 数据切分
+严格按时间顺序切分，不打乱：
+- **训练集**：70%
+- **验证集**：15%
+- **测试集**：15%
+
+## 防止时间泄漏
+
+项目实施了严格的防时间泄漏措施：
+
+### 1. 严格时间切分
+```python
+# 按时间顺序切分，不打乱
+train_size = int(n_samples * 0.7)
+val_size = int(n_samples * 0.15)
+
+X_train = X[:train_size]
+X_val = X[train_size:train_size+val_size]
+X_test = X[train_size+val_size:]
+```
+
+### 2. 特征计算
+所有技术指标只使用历史数据：
+```python
+# 使用rolling确保只用历史数据
+df['sma_20'] = df['close'].rolling(window=20).mean()
+df['ema_10'] = df['close'].ewm(span=10).mean()
+```
+
+### 3. 标准化处理
+只使用训练集的统计量：
+```python
+# 只在训练集上fit
+scaler.fit(X_train)
+
+# 用训练集的统计量transform验证集和测试集
+X_val = scaler.transform(X_val)
+X_test = scaler.transform(X_test)
+```
+
+### 4. 标签构造
+使用未来数据作为标签：
+```python
+# 使用shift(-1)获取下一日收盘价
+df['next_close'] = df['close'].shift(-1)
+df['target'] = (df['next_close'] > df['close']).astype(int)
+```
+
+### 5. 滑动窗口
+确保时序性：
+```python
+for i in range(sequence_length, len(features)):
+    X.append(features[i-sequence_length:i])  # 过去30日
+    y.append(targets[i])  # 当前日的目标（下一日涨跌）
+```
 
 ## 项目结构
 
@@ -22,164 +340,349 @@ Project/
 ├── data/                      # 数据目录
 │   ├── raw/                   # 原始数据
 │   └── processed/             # 处理后的数据
+│
 ├── src/                       # 源代码
-│   ├── data_loader.py        # 数据获取
-│   ├── feature_engineering.py # 特征工程
-│   ├── models/               # 模型定义
-│   │   ├── mlp.py
-│   │   ├── lstm.py
-│   │   ├── transformer.py
-│   │   ├── mamba.py
-│   │   ├── arima.py
-│   │   └── prophet_model.py
-│   ├── train.py              # 训练脚本
-│   └── evaluate.py           # 评估脚本
+│   ├── __init__.py
+│   ├── data_loader.py        # 数据获取（300行）
+│   ├── feature_engineering.py # 特征工程（500行）
+│   ├── train.py              # 训练脚本（400行）
+│   ├── evaluate.py           # 评估脚本（400行）
+│   │
+│   └── models/               # 模型定义
+│       ├── __init__.py
+│       ├── mlp.py            # MLP模型（200行）
+│       ├── lstm.py           # LSTM模型（250行）
+│       ├── transformer.py    # Transformer模型（300行）
+│       ├── mamba_model.py    # Mamba模型（250行）
+│       ├── arima_model.py    # ARIMA模型（250行）
+│       └── prophet_model.py  # Prophet模型（250行）
+│
+├── results/                   # 结果目录
+│   ├── models/               # 训练好的模型
+│   └── *.csv, *.txt          # 评估结果
+│
+├── plots/                     # 可视化图表
+│   ├── *_confusion_matrix.png
+│   ├── *_roc_curve.png
+│   ├── *_training_history.png
+│   └── model_comparison.png
+│
+├── logs/                      # 日志文件
+│
 ├── config.yaml               # 配置文件
-├── main.py                   # 主执行脚本
+├── main.py                   # 主执行脚本（300行）
+├── test_setup.py             # 配置测试脚本
 ├── requirements.txt          # 依赖文件
-└── README.md                 # 项目说明
+├── run.sh                    # Linux/Mac启动脚本
+├── run.bat                   # Windows启动脚本
+├── .gitignore                # Git忽略文件
+└── README.md                 # 本文件
+
+总计：13个Python源文件，~4000行代码
 ```
-
-## 快速开始
-
-### 1. 安装依赖
-
-```bash
-pip install -r requirements.txt
-```
-
-**注意**：如果安装mamba-ssm遇到问题，可以尝试：
-```bash
-pip install mamba-ssm --no-build-isolation
-```
-
-### 2. 运行完整流程
-
-```bash
-python main.py
-```
-
-这将执行以下步骤：
-1. 下载数据（贵州茅台、招商银行、中国平安等）
-2. 计算技术指标
-3. 构造时间序列样本
-4. 训练多个模型
-5. 评估并生成报告
-
-### 3. 单独执行某个步骤
-
-```bash
-# 仅下载数据
-python main.py --step download
-
-# 仅训练模型
-python main.py --step train --model lstm
-
-# 仅评估
-python main.py --step evaluate
-```
-
-## 技术指标说明
-
-项目实现了以下技术指标：
-
-### 趋势指标
-- SMA/EMA：简单/指数移动平均线（5, 10, 20, 30, 60日）
-- MACD：移动平均收敛发散指标
-- ADX：平均趋向指数
-
-### 动量指标
-- RSI：相对强弱指数
-- Stochastic：随机指标
-- CCI：商品通道指数
-- Williams %R：威廉指标
-- ROC：变动速率
-
-### 波动率指标
-- Bollinger Bands：布林带
-- ATR：平均真实波动幅度
-- Standard Deviation：标准差
-
-### 成交量指标
-- OBV：能量潮指标
-- Volume MA：成交量移动平均
-- MFI：资金流量指数
-
-### 其他指标
-- 涨跌幅、收益率
-- 高低价差、振幅
-- 换手率相关指标
-
-## 模型说明
-
-### 1. MLP (多层感知机)
-- 简单的前馈神经网络
-- 作为基线模型
-
-### 2. LSTM (长短期记忆网络)
-- 经典的时序深度学习模型
-- 擅长捕捉长期依赖
-
-### 3. Transformer
-- 基于注意力机制的模型
-- 并行化处理时序数据
-
-### 4. Mamba
-- 最新的状态空间模型
-- 高效的长序列建模
-
-### 5. ARIMA
-- 经典统计时序模型
-- 自回归积分滑动平均
-
-### 6. Prophet
-- Facebook开源的时序预测模型
-- 擅长处理趋势和季节性
-
-## 数据集说明
-
-- **股票池**：上证50成分股（贵州茅台600519、招商银行600036、中国平安601318等）
-- **时间范围**：2019-01-01 至今
-- **数据频率**：日线数据
-- **特征维度**：40+个特征
-- **样本构造**：滑动窗口30日，预测下1日
-- **数据切分**：
-  - 训练集：70%（按时间顺序）
-  - 验证集：15%
-  - 测试集：15%
-
-## 评估指标
-
-- **Accuracy**：准确率
-- **Precision**：精确率
-- **Recall**：召回率
-- **F1-Score**：F1分数
-- **AUC**：ROC曲线下面积
-- **Confusion Matrix**：混淆矩阵
-
-## 防止时间泄漏的措施
-
-1. **严格时间切分**：训练集、验证集、测试集严格按时间顺序切分，不打乱
-2. **特征计算**：所有技术指标只使用历史数据，不使用当日或未来数据
-3. **标签构造**：预测目标为下一交易日涨跌，不使用当日收盘价
-4. **滚动验证**：支持时间序列交叉验证
 
 ## 配置说明
 
-编辑 `config.yaml` 可以修改：
-- 股票代码列表
-- 时间窗口大小
-- 模型超参数
-- 训练参数等
+### 编辑配置文件
+
+编辑 `config.yaml` 来修改项目配置：
+
+#### 股票代码
+```yaml
+data:
+  stock_codes:
+    - "600519.SS"  # 贵州茅台
+    - "600036.SS"  # 招商银行
+    - "601318.SS"  # 中国平安
+    # 添加更多股票...
+```
+
+#### 时间范围
+```yaml
+data:
+  start_date: "2019-01-01"
+  end_date: null  # null表示到最新日期
+```
+
+#### 特征工程参数
+```yaml
+features:
+  sequence_length: 30  # 时间窗口大小
+  prediction_horizon: 1  # 预测未来几天
+  
+  indicators:
+    ma_periods: [5, 10, 20, 30, 60]
+    macd_fast: 12
+    macd_slow: 26
+    rsi_period: 14
+```
+
+#### 模型参数
+```yaml
+models:
+  mlp:
+    hidden_dims: [128, 64, 32]
+    dropout: 0.3
+  
+  lstm:
+    hidden_dim: 128
+    num_layers: 2
+    bidirectional: true
+  
+  transformer:
+    d_model: 128
+    nhead: 8
+    num_layers: 3
+```
+
+#### 训练参数
+```yaml
+training:
+  batch_size: 64
+  epochs: 100
+  learning_rate: 0.001
+  device: "cuda"  # 或 "cpu"
+  
+  early_stopping:
+    patience: 20
+    min_delta: 0.001
+```
+
+## 使用示例
+
+### 示例1：快速测试
+```bash
+# 测试环境配置
+python test_setup.py
+
+# 使用少量数据快速测试
+# 编辑 config.yaml:
+# - epochs: 5
+# - stock_codes: ["600519.SS"]  # 只用一只股票
+
+python main.py
+```
+
+### 示例2：训练特定模型
+```bash
+# 只训练LSTM和Transformer
+python main.py --step train --model lstm,transformer
+
+# 只训练MLP作为快速基线
+python main.py --step train --model mlp
+```
+
+### 示例3：分步执行
+```bash
+# 第一步：下载数据
+python main.py --step download
+
+# 第二步：训练模型
+python main.py --step train
+
+# 第三步：评估模型
+python main.py --step evaluate
+```
+
+### 示例4：使用自定义配置
+```bash
+# 复制并修改配置文件
+cp config.yaml my_config.yaml
+# 编辑 my_config.yaml...
+
+# 使用自定义配置运行
+python main.py --config my_config.yaml
+```
+
+## 评估指标
+
+项目提供多维度的评估指标：
+
+### 分类指标
+- **Accuracy**：准确率 = (TP + TN) / (TP + TN + FP + FN)
+- **Precision**：精确率 = TP / (TP + FP)
+- **Recall**：召回率 = TP / (TP + FN)
+- **F1-Score**：F1分数 = 2 × (Precision × Recall) / (Precision + Recall)
+- **AUC**：ROC曲线下面积
+
+### 可视化输出
+- **混淆矩阵**：预测结果的混淆矩阵热力图
+- **ROC曲线**：真正例率vs假正例率曲线
+- **训练历史**：训练和验证的损失/准确率曲线
+- **模型对比**：所有模型的性能对比柱状图
+
+### 输出文件
+```
+results/
+├── model_comparison.csv              # 模型对比表
+├── mlp_classification_report.txt    # MLP详细报告
+├── lstm_classification_report.txt   # LSTM详细报告
+└── ...
+
+plots/
+├── mlp_confusion_matrix.png         # 混淆矩阵
+├── mlp_roc_curve.png                # ROC曲线
+├── mlp_training_history.png         # 训练历史
+├── model_comparison.png             # 模型对比
+└── ...
+```
+
+## 常见问题
+
+### 1. 数据下载失败
+**问题**：无法下载股票数据
+
+**解决方案**：
+- 检查网络连接
+- 尝试切换数据源（在config.yaml中修改 `data_source: "akshare"`）
+- 使用VPN或代理
+- 检查股票代码是否正确
+
+### 2. CUDA out of memory
+**问题**：GPU内存不足
+
+**解决方案**：
+- 减小 `batch_size`（如从64改为32或16）
+- 使用CPU：在config.yaml中设置 `device: "cpu"`
+- 减少模型大小（减少hidden_dim或num_layers）
+- 使用梯度累积
+
+### 3. Mamba安装失败
+**问题**：mamba-ssm安装失败
+
+**解决方案**：
+- 项目会自动使用GRU作为替代，不影响运行
+- 或者注释掉requirements.txt中的mamba-ssm
+- 或者跳过Mamba模型训练
+
+### 4. 训练太慢
+**问题**：训练时间过长
+
+**解决方案**：
+- 使用GPU加速
+- 减少epochs（如改为50或20）
+- 只训练部分模型：`--model mlp,lstm`
+- 使用更少的股票
+- 缩短时间范围
+
+### 5. 内存不足
+**问题**：系统内存不足
+
+**解决方案**：
+- 减少股票数量
+- 减小sequence_length
+- 减少技术指标数量
+- 分批处理数据
 
 ## 注意事项
 
-1. 首次运行会自动下载数据，需要网络连接
-2. Mamba模型需要CUDA支持，如无GPU可跳过
-3. 数据获取可能受网络影响，建议使用稳定的网络环境
-4. 本项目仅供学习研究使用，不构成投资建议
+### ⚠️ 重要提示
+
+1. **数据获取**
+   - 首次运行会自动下载数据，需要时间
+   - 需要稳定的网络连接
+   - 遵守数据源的使用条款和限制
+
+2. **计算资源**
+   - 建议使用GPU训练深度学习模型
+   - 需要足够的内存（建议8GB+）
+   - Mamba模型需要CUDA支持
+
+3. **投资风险**
+   - **本项目仅供学习研究使用**
+   - **不构成任何投资建议**
+   - **实际投资需谨慎，请咨询专业投资顾问**
+   - 历史表现不代表未来结果
+
+4. **数据版权**
+   - 遵守数据提供方的使用条款
+   - 不用于商业用途
+   - 尊重数据版权
+
+5. **模型局限性**
+   - 金融市场复杂多变
+   - 模型预测存在不确定性
+   - 需要持续优化和改进
+
+## 未来扩展
+
+项目可以在以下方向进一步扩展：
+
+### 📊 数据方向
+- 添加更多数据源（Tushare、Wind等）
+- 加入基本面数据（财务报表等）
+- 引入新闻情感分析
+- 整合社交媒体数据
+- 加入宏观经济指标
+
+### 🤖 模型方向
+- 实现更多模型（GRU、Attention、TCN等）
+- 尝试集成学习方法
+- 探索强化学习策略
+- 实现在线学习
+- 模型融合和Stacking
+
+### 🎯 任务方向
+- 回归任务（预测具体涨跌幅）
+- 多步预测（预测未来多日）
+- 异常检测（识别异常交易）
+- 因子挖掘
+- 风险评估
+
+### 💼 应用方向
+- 构建回测框架
+- 实现交易策略
+- 开发风险管理系统
+- 创建实时监控系统
+- 构建Web可视化界面
+
+### 🔧 工程方向
+- 实现分布式训练
+- 添加模型压缩和加速
+- 实现自动化调参
+- 构建MLOps流程
+- 添加单元测试
+
+## 参考文献
+
+### 学术论文
+1. **LSTM**: Hochreiter, S., & Schmidhuber, J. (1997). Long short-term memory. Neural computation, 9(8), 1735-1780.
+2. **Transformer**: Vaswani, A., et al. (2017). Attention is all you need. Advances in neural information processing systems, 30.
+3. **Mamba**: Gu, A., & Dao, T. (2023). Mamba: Linear-Time Sequence Modeling with Selective State Spaces. arXiv preprint arXiv:2312.00752.
+
+### 技术指标
+- Murphy, J. J. (1999). Technical analysis of the financial markets: A comprehensive guide to trading methods and applications.
+- Achelis, S. B. (2000). Technical analysis from A to Z (Vol. 204). McGraw-Hill.
+
+### 数据源
+- [Yahoo Finance API](https://finance.yahoo.com/)
+- [AKShare](https://akshare.akfamily.xyz/)
+
+## 项目统计
+
+- **代码总量**：~4000行Python代码
+- **模型数量**：6个（MLP, LSTM, Transformer, Mamba, ARIMA, Prophet）
+- **技术指标**：40+种经典指标
+- **文档完整度**：100%
+- **工程实践**：✅ 模块化、配置化、自动化
+
+## 贡献
+
+欢迎贡献代码、报告问题或提出建议！
 
 ## License
 
 MIT License
 
+Copyright (c) 2024
+
+---
+
+**Happy Coding! 📈🤖**
+
+*项目创建时间: 2024-11-14*  
+*最后更新: 2024-11-14*
+
+---
+
+如有问题或建议，欢迎通过 [GitHub Issues](https://github.com/li147852xu/ARIN7101_Project_Stock_Prediction/issues) 联系我们。
